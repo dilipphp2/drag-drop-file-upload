@@ -4,12 +4,13 @@
 		var settings = $.extend({
 			url: null,
 			method: 'POST',
-			inputName: null,
+			inputName: 'files',
 			acceptType: null,
 			class : null,
 			xcsrftoken: null,
 			tokenKey: null,
-			label: 'Drag and Drop Images Here'
+			label: 'Drag and Drop Images Here',
+			uploadedFileUrl: null
 		},configs);
 
 		var dragDrop = this;
@@ -44,6 +45,18 @@
 				createFormData(files);
 			});
 
+			$(dragDrop).find('.drop-area').on('click', function(){
+				$(dragDrop).find('input[type="file"]').click();
+			});
+
+			$(dragDrop).find('input[type="file"]').on('change', function(){
+				createFormData(this.files);
+			});
+
+			$(document).on('click', '.remove-file', function(){
+				$(this).parents('.progress-bar-wrapper').remove();
+			});
+
 
 			function createFormData(files)
 		    {
@@ -53,9 +66,9 @@
 			     for(i=0; i < numberOfFiles; i++)
 			     {
 			     	fileForm.append('file',files[i]);
-			     	$(dragDrop).append('<div class="progress  mt-3 d-inline-block" style = "width:calc(100% - 25px)" name="'+ (name+i) +'">'+
+			     	$(dragDrop).append('<div class = "progress-bar-wrapper"><div class="progress  mt-3 d-inline-block" style = "width:calc(100% - 25px)" name="'+ (name+i) +'">'+
   											'<div class="progress-bar progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">0%</div>'+
-										'</div><span class="pull-right" style="margin-top: .7rem !important;"><a href="javascript:;"><i class="fa fa-times-circle text-danger"></i></a></span> <span> '+ files[i].name +'</spam>');
+										'</div><span class="pull-right" style="margin-top: .7rem !important;"><a href="javascript:;" class = "remove-file"><i class="fa fa-times-circle text-danger"></i></a> <input type = "hidden" name = "'+ settings.inputName + '[]" /></span> <span> '+ files[i].name +'</span></div>');
 			     	uploadFormData(fileForm, (name+i));
 			     }
 			}
@@ -86,6 +99,7 @@
 			     	contentType:false,
 			     	cache: false,
 			     	processData: false,
+			     	dataType: 'json',
 			     	// for progess bar in upload
 			     	xhr: function() {
 			     		var myXhr = $.ajaxSettings.xhr();
@@ -100,9 +114,7 @@
 							        $(bar).text(Percentage+'%');
 							        if(Percentage >= 100)
 							        {
-							        	window.setTimeout(function(){
-							        		// $(bar).removeClass('progress-bar-striped progress-bar-animated');
-							        	},1000);
+							        	
 							        	
 							        }
 							    }  
@@ -111,10 +123,26 @@
 			            return myXhr;
 			        },
 			        success: function(data){
-				      
+			        	keypattern = (settings.uploadedFileUrl) ? settings.uploadedFileUrl : 'value';
+
+			        	$('div[name="'+fileName+'"]').parents('.progress-bar-wrapper').find('input').val(objectMap(data,keypattern));
 				    }
 				});
 		    }
+
+		    function objectMap(object,keypattern = null)
+			{
+				keypattern = keypattern.toString();
+				var returnableValue = object;
+				keys = keypattern.split('.');
+				keys.forEach(function(key){
+					if(returnableValue)
+					{
+						returnableValue = returnableValue[key];
+					}	
+				});
+				return (returnableValue != null)? returnableValue : '';
+			}
 		});
 
 
